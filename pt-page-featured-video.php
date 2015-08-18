@@ -22,12 +22,6 @@ function add_fv_box_fields() {
 
 function admin_fv_box_html() {
 
-	if (fv_check_postcount() > 10) {
-		$reg = new PLicenseFV();
-		if (!$reg->valid)
-			fv_do_licensing_page();
-	}
-
 	global $post;
 
 	$rel_video_url = get_post_meta( $post->ID, '_related-video-url', true );
@@ -41,29 +35,6 @@ function admin_fv_box_html() {
 		<input type="hidden" name="docs_check_nonce" id="docs_check_nonce" value="' . wp_create_nonce( plugin_basename(__FILE__) ) . '" />
 	</div>';
 
-}
-
-function fv_check_postcount() {
-	global $wpdb;
-	$sql = "SELECT COUNT(*) as val FROM $wpdb->postmeta WHERE meta_key='_related-video-url'";
-	$count = $wpdb->get_row($sql);
-
-	if ($count->val > 10) {
-		require_once 'core/registration.php';
-		require_once 'core/classes/fv_classes.php';
-		require_once 'core/data/feedcore.php';
-	}
-		
-	return $count->val;
-}
-
-function fv_do_licensing_page() {
-	echo '
-	<div>10 video limit reached</div>
-	<div>Enter license key:</div>
-	<div><input type="text" name="fvLicenseKey" class="widefat" /></div>
-	<div><a href="http://shoppingcartproductfeed.com/" target="_blank">Get Key</a></div>
-	';
 }
 
 //***********************************************************
@@ -110,20 +81,12 @@ function save_related_video_item(){
 	if (isset($_POST['fvLicenseKey']) )
 		update_option('fv_licensekey', $_POST['fvLicenseKey']);
 
-	$allowNewPost = true;
-	if (fv_check_postcount() > 10) {
-		$reg = new PLicenseFV();
-		if (!$reg->valid)
-			$allowNewPost = false;
-	}
-	// So we passed everything ...
-
 	if ( isset($_POST['rel_video']) ) {
 		// clean all doc meta, we are going to add all current meta again ...
 		delete_post_meta($post_id, '_related-video');
 		delete_post_meta($post_id, '_related-video-url');
 
-		if ($allowNewPost || strlen($_POST['videoEmbedURL']) == 0) {
+		if (strlen($_POST['videoEmbedURL']) == 0) {
 			$videoEmbedURL = $_POST['videoEmbedURL'];
 			add_post_meta( $post_id, '_related-video-url', $videoEmbedURL );
 
